@@ -5,7 +5,6 @@ import {
   IsNumber,
   IsOptional,
   IsString,
-  MinLength,
 } from 'class-validator';
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
