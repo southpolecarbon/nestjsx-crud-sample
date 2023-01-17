@@ -9,7 +9,6 @@ import {
 import routerProvider from '@pankod/refine-nextjs-router';
 import dataProvider from '@pankod/refine-nestjsx-crud';
 import '@pankod/refine-antd/dist/reset.css';
-import { AntdInferencer } from '@pankod/refine-inferencer/antd';
 import {
   Title,
   Header,
@@ -24,7 +23,6 @@ import { EmissionFactorShow } from './emission-factors/show';
 import { EmissionFactorCreate } from './emission-factors/create';
 import { EmissionFactorEdit } from './emission-factors/edit';
 
-// const API_URL = 'https://api.nestjsx-crud.refine.dev';
 const API_URL = 'http://localhost:5004';
 
 function MyApp({ Component, pageProps }: AppProps): JSX.Element {
@@ -36,14 +34,6 @@ function MyApp({ Component, pageProps }: AppProps): JSX.Element {
       ReadyPage={ReadyPage}
       catchAll={<ErrorComponent />}
       resources={[
-        // {
-        //   name: 'posts',
-        //   list: AntdInferencer,
-        //   edit: EmissionFactorEdit,
-        //   show: AntdInferencer,
-        //   create: EmissionFactorCreate,
-        //   canDelete: true,
-        // },
         {
           name: 'emissionFactors',
           list: EmissionFactorsList,
@@ -52,10 +42,10 @@ function MyApp({ Component, pageProps }: AppProps): JSX.Element {
           create: EmissionFactorCreate,
           canDelete: true,
         },
-        // {
-        //   name: 'users',
-        //   list: UsersList,
-        // },
+        {
+          name: 'users',
+          list: UsersList,
+        },
       ]}
       Title={Title}
       Header={Header}
