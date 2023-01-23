@@ -1,0 +1,26 @@
+{
+  "name": "cli",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "license": "MIT",
+  "private": true,
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.1",
+    "@types/node": "^18.11.18",
+    "rimraf": "^4.1.1",
+    "typescipt": "^1.0.0"
+  },
+  "scripts": {
+    "clean": "rimraf ./dist",
+    "build": "yarn clean && tsc",
+    "start": "yarn build && node ./dist/index.js"
+  },
+  "dependencies": {
+    "axios": "^1.2.3",
+    "commander": "^10.0.0",
+    "country-code-lookup": "^0.0.22",
+    "csv-parse": "^5.3.3",
+    "fs-extra": "^11.1.0",
+    "iso-3166-2": "^1.0.0"
+  }
+}
