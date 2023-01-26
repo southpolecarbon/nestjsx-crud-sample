@@ -52,6 +52,7 @@ export class EmissionFactor {
   @ValidateNested({ always: true })
   @OneToOne(() => ConstituentGases, (constituentGases) => constituentGases, {
     cascade: true,
+    onDelete: 'CASCADE',
   })
   @JoinColumn()
   constituent_gases: ConstituentGases;
@@ -160,7 +161,7 @@ export class EmissionFactor {
   @IsOptional({ groups: [UPDATE] })
   @IsNotEmpty({ groups: [CREATE] })
   @IsString({ always: true })
-  @Column({ type: 'varchar', nullable: false })
+  @Column({ type: 'varchar', nullable: false, unique: true })
   uuid: string;
 
   @IsOptional({ groups: [UPDATE] })

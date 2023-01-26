@@ -1,8 +1,7 @@
 import { CrudValidationGroups } from '@nestjsx/crud';
 import { Exclude } from 'class-transformer';
 import { IsEmpty, IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
-import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
-import { EmissionFactor } from './emission-factor.enitity';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 const { CREATE, UPDATE } = CrudValidationGroups;
 

@@ -3,12 +3,7 @@ import { resolve } from 'node:path';
 import { readJsonSync } from 'fs-extra';
 import { program } from 'commander';
 import { parse } from 'csv-parse';
-import {
-  chunks,
-  generateEmissionFactor,
-  getRegion,
-  insertEmissionFactors,
-} from './utils';
+import { chunks, generateEmissionFactor, insertEmissionFactors } from './utils';
 
 import type { IRow, IEmissionFactor } from './types';
 
@@ -49,6 +44,8 @@ fs.createReadStream(filePath, 'utf-8')
     for (const batch of chunkedEmissionFactors) {
       await insertEmissionFactors(batch);
     }
+
+    console.log('emission factor inserted successfully');
   })
   .on('error', (error: unknown) => {
     throw error;

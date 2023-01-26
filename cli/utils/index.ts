@@ -1,6 +1,8 @@
 import { IEmissionFactor, IRow } from '../types';
 import * as countryLookup from 'country-code-lookup';
+import Decimal from 'decimal.js';
 import axios from './axios';
+import { getRegionName } from './regions';
 const iso3166 = require('iso-3166-2');
 
 export const getUnitType = (unit: string): string => {
@@ -127,39 +129,21 @@ export function* chunks<T>(arr: T[], n: number): Generator<T[], void> {
 }
 
 export const generateEmissionFactor = (row: IRow): IEmissionFactor => {
-  const uncertainty: number | null =
-    row.uncertainty === '' ? null : Number(row.uncertainty);
+  const uncertainty = row.uncertainty === '' ? null : Number(row.uncertainty);
   const regionName = getRegion(row.region);
 
   const unitType = [getUnitType(row.activity_unit)];
   const unit = row.activity_unit === 'g' ? 'g/kg' : `kg/${row.activity_unit}`;
 
-  const supportedCalculationMethods: string[] = [
+  const supportedCalculationMethods: string[] = getSupportedCalculationMethods([
     { label: 'ar4', value: row['kgco2e-ar4'] },
     { label: 'ar5', value: row['kgco2e-ar5'] },
-  ].reduce(
-    (methods: string[], item: { label: string; value: string | number }) => {
-      if (item.value !== '' && item.value !== 'not-supplied') {
-        return [...methods, item.label];
-      }
+  ]);
 
-      return methods;
-    },
-    []
+  const { factor, factorCalculationMethod } = getFactorAndCalculationMethod(
+    row,
+    supportedCalculationMethods
   );
-
-  let factorCalculationMethod: string = 'ar4';
-  let co2e: number = 0.0;
-
-  if (supportedCalculationMethods.includes('ar5')) {
-    factorCalculationMethod = 'ar5';
-    co2e = Number(row['kgco2e-ar5']);
-  }
-
-  if (supportedCalculationMethods.includes('ar4')) {
-    factorCalculationMethod = 'ar4';
-    co2e = Number(row['kgco2e-ar4']);
-  }
 
   const emissionFactor: IEmissionFactor = {
     activity_id: row.activity_id,
@@ -178,12 +162,15 @@ export const generateEmissionFactor = (row: IRow): IEmissionFactor => {
     unit,
     lca_activity: row.lca_activity,
     access_type: 'public',
-    supported_calculation_methods: supportedCalculationMethods,
-    factor: co2e,
+    supported_calculation_methods:
+      supportedCalculationMethods.length > 0
+        ? supportedCalculationMethods
+        : ['ar4', 'ar5'],
+    factor,
     factor_calculation_method: factorCalculationMethod,
     factor_calculation_origin: row.contributor,
     constituent_gases: {
-      co2e_total: co2e,
+      co2e_total: factor,
     },
   };
 
@@ -193,13 +180,10 @@ export const generateEmissionFactor = (row: IRow): IEmissionFactor => {
 export const insertEmissionFactors = async (
   emissionFactors: IEmissionFactor[]
 ): Promise<void> => {
-  const { status, data } = await axios.post('/emissionFactors/bulk', {
-    bulk: emissionFactors,
-  });
-
-  console.log('emission factor inserted successfully');
-
   try {
+    await axios.post('/emissionFactors/bulk', {
+      bulk: emissionFactors,
+    });
   } catch (err) {
     console.log('Failed to insert emission factors', err);
     throw err;
@@ -219,35 +203,72 @@ export const getRegion = (region: string): string => {
       if (isoRegion !== null && Object.keys(isoRegion).length > 0) {
         regionName = `${isoRegion.name}, ${isoRegion.countryCode}`;
       } else {
-        switch (region) {
-          case 'EU':
-            regionName = 'European Union';
-            break;
-          case 'NZ-WLG':
-            regionName = 'Wellington, WGN, NZ';
-            break;
-          case 'NZ-WLG':
-            regionName = 'Wellington, WGN, NZ';
-            break;
-          case 'EU_S_AMERICA':
-            regionName = 'Europe and South America';
-            break;
-          case 'ASIA_AFRICA':
-            regionName = 'Asia and Africa';
-            break;
-          case 'N_AMERICA':
-            regionName = 'North America';
-            break;
-
-          default:
-            regionName = countryLookup.byIso(region)?.country || region;
-            break;
-        }
+        regionName =
+          getRegionName(region) ||
+          countryLookup.byIso(region)?.country ||
+          region;
       }
     }
 
     return regionName;
   } catch (err: unknown) {}
 
-  return region;
+  return '';
+};
+
+const getSupportedCalculationMethods = (
+  values: { label: string; value: string }[]
+): string[] => {
+  return values.reduce(
+    (methods: string[], item: { label: string; value: string | number }) => {
+      if (item.value !== '' && item.value !== 'not-supplied') {
+        return [...methods, item.label];
+      }
+
+      return methods;
+    },
+    []
+  );
+};
+
+const getFactorAndCalculationMethod = (
+  row: IRow,
+  supportedCalculationMethods: string[]
+): { factor: number; factorCalculationMethod: string } => {
+  const ar5GWP: { [key: string]: number } = { kgco2: 1, kgch4: 28, kgn2o: 265 };
+
+  let factor: number = 0.0;
+  let factorCalculationMethod: string = 'ar4';
+
+  if (supportedCalculationMethods.includes('ar5')) {
+    factorCalculationMethod = 'ar5';
+    factor = Number(row['kgco2e-ar5']);
+  } else if (supportedCalculationMethods.includes('ar4')) {
+    factorCalculationMethod = 'ar4';
+    factor = Number(row['kgco2e-ar4']);
+  }
+
+  if (
+    (row['kgco2e-ar4'] === '' || row['kgco2e-ar4'] === 'not-supplied') &&
+    (row['kgco2e-ar5'] === '' || row['kgco2e-ar5'] === 'not-supplied')
+  ) {
+    const factorValue = [
+      { type: 'kgco2', value: row.kgco2 },
+      { type: 'kgch4', value: row.kgch4 },
+      { type: 'kgn2o', value: row.kgn2o },
+    ].reduce((factorValue, current) => {
+      if (current.value !== '' && current.value !== 'not-supplied') {
+        return factorValue.add(
+          new Decimal(current.value).mul(ar5GWP[current.type])
+        );
+      }
+
+      return factorValue;
+    }, new Decimal(0.0));
+
+    factorCalculationMethod = 'ar5';
+    factor = Number(factorValue.toString());
+  }
+
+  return { factor, factorCalculationMethod };
 };
