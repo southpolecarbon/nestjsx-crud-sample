@@ -24,7 +24,7 @@ export const generateEmissionFactor = (row: Row): EmissionFactor => {
     supportedCalculationMethods
   );
 
-  const rawEmissionFactor: EmissionFactor = {
+  const emissionFactor = EmissionFactorSchema.parse({
     ...row,
     year: row.year_released,
     uncertainty,
@@ -42,9 +42,7 @@ export const generateEmissionFactor = (row: Row): EmissionFactor => {
     constituent_gases: {
       co2e_total: factor,
     },
-  };
-
-  const emissionFactor = EmissionFactorSchema.parse(rawEmissionFactor);
+  });
 
   return emissionFactor;
 };
