@@ -1,4 +1,7 @@
-export const getRegionName = (region: string): string | null => {
+import * as countryLookup from 'country-code-lookup';
+const iso3166 = require('iso-3166-2');
+
+const getRegionName = (region: string): string | null => {
   const regions: { region: string; regionName: string }[] = [
     { region: 'EU', regionName: 'European Union' },
     { region: 'NZ-WLG', regionName: 'Wellington, WGN, NZ' },
@@ -104,4 +107,30 @@ export const getRegionName = (region: string): string | null => {
     regions.find((currentRegion) => currentRegion.region === region)
       ?.regionName || null
   );
+};
+
+export const getRegion = (region: string): string => {
+  if (region.toLowerCase() === 'global') {
+    return 'Global';
+  }
+
+  try {
+    let regionName = countryLookup.byFips(region)?.country;
+
+    if (!regionName) {
+      const isoRegion = iso3166.subdivision(region);
+      if (isoRegion !== null && Object.keys(isoRegion).length > 0) {
+        regionName = `${isoRegion.name}, ${isoRegion.countryCode}`;
+      } else {
+        regionName =
+          getRegionName(region) ||
+          countryLookup.byIso(region)?.country ||
+          region;
+      }
+    }
+
+    return regionName;
+  } catch (err: unknown) {}
+
+  return '';
 };

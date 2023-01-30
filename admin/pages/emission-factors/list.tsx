@@ -77,7 +77,7 @@ export const EmissionFactorsList: React.FC<IResourceComponentsProps> = () => {
             <Table.Column dataIndex="name" title="NAME" />
             <Table.Column dataIndex="source" title="SOURCE" />
             <Table.Column dataIndex="year" title="YEAR" />
-            <Table.Column dataIndex="region" title="REGION" />
+            <Table.Column dataIndex="region_name" title="REGION" />
             <Table.Column dataIndex="sector" title="SECTOR" />
             <Table.Column dataIndex="category" title="CATEGORY" />
             <Table.Column

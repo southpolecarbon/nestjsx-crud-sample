@@ -5,7 +5,7 @@ import { program } from 'commander';
 import { parse } from 'csv-parse';
 import { chunks, generateEmissionFactor, insertEmissionFactors } from './utils';
 
-import type { IRow, IEmissionFactor } from './types';
+import { Row, EmissionFactor, RowSchema } from './types';
 
 const { version } = readJsonSync(resolve(__dirname, '..', 'package.json'));
 
@@ -22,7 +22,7 @@ program
 
 const filePath: string = program.opts().file;
 
-const emissionFactors: IEmissionFactor[] = [];
+const emissionFactors: EmissionFactor[] = [];
 
 fs.createReadStream(filePath, 'utf-8')
   .pipe(
@@ -33,8 +33,9 @@ fs.createReadStream(filePath, 'utf-8')
       columns: (header) => header.map((column: string) => column.toLowerCase()),
     })
   )
-  .on('data', (row: IRow) => {
-    const emissionFactor = generateEmissionFactor(row);
+  .on('data', (row: Row) => {
+    const parsedData = RowSchema.parse(row);
+    const emissionFactor = generateEmissionFactor(parsedData);
 
     emissionFactors.push(emissionFactor);
   })
@@ -45,7 +46,9 @@ fs.createReadStream(filePath, 'utf-8')
       await insertEmissionFactors(batch);
     }
 
-    console.log('emission factor inserted successfully');
+    console.log(
+      `${emissionFactors.length} emission factors inserted successfully`
+    );
   })
   .on('error', (error: unknown) => {
     throw error;

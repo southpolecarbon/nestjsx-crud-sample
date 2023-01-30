@@ -1,55 +1,67 @@
-export interface IRow {
-  uuid: string;
-  sector: string;
-  category: string;
-  activity_id: string;
-  name: string;
-  activity_unit: string;
-  'kgco2e-ar5': string;
-  'kgco2e-ar4': string;
-  kgco2: string;
-  kgch4: string;
-  kgn2o: string;
-  'kgco2e-otherghgs-ar5': string;
-  'kgco2e-otherghgs-ar4': string;
-  uncertainty: string;
-  scope: string;
-  lca_activity: string;
-  source: string;
-  dataset: string;
-  year_released: string;
-  year_valid_from: string;
-  years_calculated_from: string;
-  region: string;
-  data_quality: string;
-  contributor: string;
-  date_accessed: string;
-  description: string;
-  source_link: string;
-}
+import { z } from 'zod';
 
-export interface IEmissionFactor {
-  activity_id: string;
-  uuid: string;
-  name: string;
-  category: string;
-  sector: string;
-  source: string;
-  source_link: string;
-  uncertainty: number | null;
-  year: string;
-  region: string;
-  region_name: string;
-  description: string;
-  unit_type: string[];
-  unit: string;
-  lca_activity: string;
-  access_type: string;
-  supported_calculation_methods: string[];
-  factor: number;
-  factor_calculation_method: string;
-  factor_calculation_origin: string;
-  constituent_gases: {
-    co2e_total: number;
-  };
-}
+export const RowSchema = z.object({
+  uuid: z.string().uuid(),
+  sector: z.string(),
+  category: z.string(),
+  activity_id: z.string(),
+  name: z.string(),
+  activity_unit: z.string(),
+  'kgco2e-ar5': z.string(),
+  'kgco2e-ar4': z.string(),
+  kgco2: z.string(),
+  kgch4: z.string(),
+  kgn2o: z.string(),
+  'kgco2e-otherghgs-ar5': z.string(),
+  'kgco2e-otherghgs-ar4': z.string(),
+  uncertainty: z.string(),
+  scope: z.string(),
+  lca_activity: z.string(),
+  source: z.string(),
+  dataset: z.string(),
+  year_released: z.string(),
+  year_valid_from: z.string(),
+  years_calculated_from: z.string(),
+  region: z.string(),
+  data_quality: z.string(),
+  contributor: z.string(),
+  date_accessed: z.string(),
+  description: z.string(),
+  source_link: z.string(),
+});
+
+export const EmissionFactorSchema = RowSchema.extend({
+  uncertainty: z.number().nullable(),
+  year: z.string(),
+  region_name: z.string(),
+  unit: z.string(),
+  unit_type: z.array(z.string()),
+  access_type: z.string(),
+  supported_calculation_methods: z.array(z.enum(['ar4', 'ar5'])),
+  factor: z.number(),
+  factor_calculation_method: z.string(),
+  factor_calculation_origin: z.string(),
+  constituent_gases: z.object({
+    co2e_total: z.number(),
+  }),
+}).omit({
+  kgco2: true,
+  kgch4: true,
+  kgn2o: true,
+  'kgco2e-ar5': true,
+  'kgco2e-ar4': true,
+  'kgco2e-otherghgs-ar5': true,
+  'kgco2e-otherghgs-ar4': true,
+  activity_unit: true,
+  scope: true,
+  dataset: true,
+  year_released: true,
+  year_valid_from: true,
+  years_calculated_from: true,
+  data_quality: true,
+  contributor: true,
+  date_accessed: true,
+});
+
+export type Row = z.infer<typeof RowSchema>;
+export type EmissionFactor = z.infer<typeof EmissionFactorSchema>;
